@@ -6,6 +6,7 @@ from .managers import CustomUserManager
 class CustomUser(AbstractUser):
     name = models.CharField(max_length=255,default='Anonymous',null=True,blank=True)
     username = None
+    pin = models.CharField(max_length=4, null=True, blank=True)  # Optional PIN field
     phone = models.CharField(max_length=15, unique=True, null=False, blank=False)  # Make phone unique and required
     USERNAME_FIELD = 'phone'  # Use phone as the login field
     REQUIRED_FIELDS = []

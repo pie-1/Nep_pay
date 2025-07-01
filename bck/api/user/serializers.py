@@ -35,8 +35,9 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'id', 'name', 'password', 'phone',
             'created_at', 'updated_at',
-            'is_active', 'is_staff', 'is_superuser' , 'created_at', 'updated_at' , 'session_token'
+            'is_active', 'is_staff', 'is_superuser' , 'created_at', 'updated_at' , 'session_token' , 'pin'
         )
         extra_kwargs = {
             'password': {'write_only': True},
+            'pin' : {'write_only': True, 'required': False},
         }
