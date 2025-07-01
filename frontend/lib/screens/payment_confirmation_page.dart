@@ -28,7 +28,7 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
     4,
     (index) => FocusNode(),
   );
-  
+
   bool _isProcessing = false;
   String _errorMessage = '';
 
@@ -49,8 +49,7 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
     } else if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
-    
-    // Check if all PIN digits are entered
+
     if (_getPinCode().length == 4) {
       _processPayment();
     }
@@ -66,10 +65,8 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
       _errorMessage = '';
     });
 
-    // Simulate payment processing
     await Future.delayed(const Duration(seconds: 2));
 
-    // For demo purposes, accept any 4-digit PIN
     final pin = _getPinCode();
     if (pin.length == 4) {
       if (mounted) {
@@ -80,8 +77,7 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
             duration: const Duration(seconds: 3),
           ),
         );
-        
-        // Navigate back to main screen
+
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
             Navigator.of(context).popUntil((route) => route.isFirst);
@@ -109,230 +105,189 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        title: const Text('Payment Confirmation'),
+        title: const Text(
+          'Confirm Payment',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 22),
+        ),
         centerTitle: true,
-        elevation: 0,
         backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // Payment Summary Card
-            Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Container(
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Payment Summary
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Container(
+                  padding: const EdgeInsets.all(20.0),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.payment,
+                        size: 40,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '₹${widget.amount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Payment Amount',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.payment,
-                      size: 48,
-                      color: colorScheme.onPrimary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '₹${widget.amount.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Payment Amount',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: colorScheme.onPrimary.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Recipient Details
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.person, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Recipient Details',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Name:', widget.receiverName),
-                    _buildDetailRow('Phone:', widget.receiverPhone),
-                    if (widget.description?.isNotEmpty == true)
-                      _buildDetailRow('Description:', widget.description!),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // PIN Input Section
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lock, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Enter 4-Digit PIN',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // PIN Input Fields
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(4, (index) {
-                        return SizedBox(
-                          width: 60,
-                          child: TextField(
-                            controller: _pinControllers[index],
-                            focusNode: _focusNodes[index],
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            maxLength: 1,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onChanged: (value) => _onPinChanged(value, index),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: colorScheme.outline),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                              ),
-                              filled: true,
-                              fillColor: colorScheme.surface,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                    
-                    if (_errorMessage.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+              const SizedBox(height: 24),
+              // Recipient Details
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        _errorMessage,
+                        'Recipient Details',
                         style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailRow('Name:', widget.receiverName),
+                      _buildDetailRow('Phone:', widget.receiverPhone),
+                      if (widget.description?.isNotEmpty == true)
+                        _buildDetailRow('Description:', widget.description!),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // PIN Input
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enter 4-Digit PIN',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(4, (index) {
+                          return SizedBox(
+                            width: 60,
+                            child: TextField(
+                              controller: _pinControllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (value) => _onPinChanged(value, index),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: colorScheme.outline),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      if (_errorMessage.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMessage,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _clearPin,
+                          child: Text(
+                            'Clear PIN',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ],
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Clear PIN Button
-                    TextButton(
-                      onPressed: _clearPin,
-                      child: Text(
-                        'Clear PIN',
-                        style: TextStyle(color: colorScheme.primary),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            
-            const Spacer(),
-            
-            // Confirm Payment Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
+              const Spacer(),
+              // Confirm Button
+              _buildActionButton(
+                context,
+                label: _isProcessing ? 'Processing...' : 'Confirm Payment',
+                icon: _isProcessing ? null : Icons.check,
+                isLoading: _isProcessing,
                 onPressed: _isProcessing ? null : _processPayment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isProcessing
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text('Processing Payment...'),
-                        ],
-                      )
-                    : Text(
-                        'Confirm Payment',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -340,16 +295,17 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            width: 100,
             child: Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
@@ -359,6 +315,7 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
               value,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
@@ -367,4 +324,43 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
       ),
     );
   }
-} 
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required String label,
+    IconData? icon,
+    required bool isLoading,
+    required VoidCallback? onPressed,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        elevation: 0,
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (isLoading)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          else if (icon != null)
+            Icon(icon, size: 20),
+          if (isLoading || icon != null) const SizedBox(width: 8),
+          Text(label),
+        ],
+      ),
+    );
+  }
+}
