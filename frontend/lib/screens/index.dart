@@ -34,16 +34,21 @@ class _IndexScreenState extends State<IndexScreen> {
           decoration: InputDecoration(
             labelText: 'Amount (₹)',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+            ),
             filled: true,
             fillColor: Colors.grey[100],
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           keyboardType: TextInputType.number,
+          style: const TextStyle(color: Colors.black),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -75,7 +80,7 @@ class _IndexScreenState extends State<IndexScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Load', style: TextStyle(fontSize: 16)),
+            child: const Text('Load', style: TextStyle(fontSize: 16, color: Colors.black)),
           ),
         ],
       ),
@@ -101,16 +106,21 @@ class _IndexScreenState extends State<IndexScreen> {
           decoration: InputDecoration(
             labelText: 'Amount (₹)',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+            ),
             filled: true,
             fillColor: Colors.grey[100],
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           keyboardType: TextInputType.number,
+          style: const TextStyle(color: Colors.black),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -151,7 +161,7 @@ class _IndexScreenState extends State<IndexScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Unload', style: TextStyle(fontSize: 16)),
+            child: const Text('Unload', style: TextStyle(fontSize: 16, color: Colors.black)),
           ),
         ],
       ),
@@ -184,10 +194,15 @@ class _IndexScreenState extends State<IndexScreen> {
                 decoration: InputDecoration(
                   labelText: 'Receiver Name',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                style: const TextStyle(color: Colors.black),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -195,11 +210,16 @@ class _IndexScreenState extends State<IndexScreen> {
                 decoration: InputDecoration(
                   labelText: 'Receiver Phone',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 keyboardType: TextInputType.phone,
+                style: const TextStyle(color: Colors.black),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -207,11 +227,16 @@ class _IndexScreenState extends State<IndexScreen> {
                 decoration: InputDecoration(
                   labelText: 'Amount (₹)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.black),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -219,11 +244,16 @@ class _IndexScreenState extends State<IndexScreen> {
                 decoration: InputDecoration(
                   labelText: 'Description (Optional)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 maxLines: 2,
+                style: const TextStyle(color: Colors.black),
               ),
             ],
           ),
@@ -231,7 +261,7 @@ class _IndexScreenState extends State<IndexScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -293,7 +323,7 @@ class _IndexScreenState extends State<IndexScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Continue', style: TextStyle(fontSize: 16)),
+            child: const Text('Continue', style: TextStyle(fontSize: 16, color: Colors.black)),
           ),
         ],
       ),
@@ -328,7 +358,7 @@ class _IndexScreenState extends State<IndexScreen> {
               Card(
                 elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                color: colorScheme.surface,
+                color: colorScheme.primaryContainer, // Enhanced card-like appearance
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -336,14 +366,35 @@ class _IndexScreenState extends State<IndexScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.account_balance_wallet, size: 28, color: colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Wallet Balance',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withOpacity(0.8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.account_balance_wallet, size: 28, color: colorScheme.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'BinaNet Wallet',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                                Text(
+                                  'Your secure offline wallet',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -354,7 +405,7 @@ class _IndexScreenState extends State<IndexScreen> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
+                          color: colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -372,7 +423,7 @@ class _IndexScreenState extends State<IndexScreen> {
                               ),
                               child: const Text(
                                 'Load Money',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
                               ),
                             ),
                           ),
@@ -388,7 +439,7 @@ class _IndexScreenState extends State<IndexScreen> {
                               ),
                               child: const Text(
                                 'Unload Money',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
                               ),
                             ),
                           ),
@@ -503,14 +554,14 @@ class _IndexScreenState extends State<IndexScreen> {
               side: BorderSide(color: colorScheme.primary, width: 1.5),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Icon(icon, size: 24),
+                Icon(icon, size: 24, color: colorScheme.primary),
                 const SizedBox(width: 12),
-                Expanded(child: Text(label)),
+                Expanded(child: Text(label, style: const TextStyle(color: Colors.black))),
               ],
             ),
           )
@@ -522,14 +573,14 @@ class _IndexScreenState extends State<IndexScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               elevation: 0,
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Icon(icon, size: 24),
                 const SizedBox(width: 12),
-                Expanded(child: Text(label)),
+                Expanded(child: Text(label, style: const TextStyle(color: Colors.black))),
               ],
             ),
           );

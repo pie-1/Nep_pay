@@ -421,10 +421,10 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.black, // Changed to pure black
               ),
             ),
           ),
