@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'secure_storage.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://10.200.10.199:8000/api/user/';
+  static const String baseUrl = 'http://10.0.6.93:8080/api/user/';
 
   /// Sign up a new user and store credentials securely.
   static Future<bool> signup({
