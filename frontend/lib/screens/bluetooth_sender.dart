@@ -34,18 +34,6 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
   bool _isPaired = false;
   AnimationController? _animationController;
 
-  // Default demo device for hackathon
-  final String _defaultDeviceName = 'OffPay Demo Device';
-  final String _defaultDeviceId = '00:11:22:33:44:55';
-
-  // Mock device names for web
-  final Map<String, String> _mockDeviceNames = {
-    '00:11:22:33:44:55': 'OffPay Demo Device',
-    '11:22:33:44:55:66': 'Redmi Note 12',
-    '22:33:44:55:66:77': 'AirBud Pro',
-    '33:44:55:66:77:88': 'Samsung Galaxy S23',
-  };
-
   StreamSubscription? _devicesSubscription;
   StreamSubscription? _messageSubscription;
   StreamSubscription? _statusSubscription;
@@ -67,36 +55,43 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
     _messageSubscription?.cancel();
     _statusSubscription?.cancel();
     _bleService.stopScan();
-    _bleService.disconnect();
     super.dispose();
   }
 
   Future<void> _initializeBluetooth() async {
     setState(() {
-      _connectionStatus = 'Simulating Bluetooth for web...';
+      _connectionStatus = 'Checking Bluetooth...';
     });
 
-    _devicesSubscription = Stream.value([
-      BluetoothDevice(remoteId: DeviceIdentifier('00:11:22:33:44:55')),
-      BluetoothDevice(remoteId: DeviceIdentifier('11:22:33:44:55:66')),
-      BluetoothDevice(remoteId: DeviceIdentifier('22:33:44:55:66:77')),
-      BluetoothDevice(remoteId: DeviceIdentifier('33:44:55:66:77:88')),
-    ]).listen((devices) {
+    // Check if Bluetooth is available
+    final isAvailable = await _bleService.isBluetoothAvailable();
+    if (!isAvailable) {
+      setState(() {
+        _connectionStatus = 'Bluetooth not available. Please enable Bluetooth and try again.';
+      });
+      return;
+    }
+
+    // Listen to device discoveries
+    _devicesSubscription = _bleService.devicesStream.listen((devices) {
       setState(() {
         _discoveredDevices = devices;
       });
     });
 
-    _statusSubscription = Stream.value('Ready to pair').listen((status) {
+    // Listen to connection status updates
+    _statusSubscription = _bleService.connectionStatusStream.listen((status) {
       setState(() {
         _connectionStatus = status;
       });
     });
 
+    // Listen to incoming messages
     _messageSubscription = _bleService.messageStream.listen((message) {
       _handleIncomingMessage(message);
     });
 
+    // Start initial scan
     _startScan();
   }
 
@@ -126,6 +121,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
       'status': 'completed',
       'transaction_id': response['transaction_id'],
       'type': 'sent',
+      'device_name': _bleService.connectedDeviceName,
     });
 
     if (mounted) {
@@ -151,19 +147,30 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
   }
 
   Future<void> _startScan() async {
+    if (_isScanning) return;
+    
     setState(() {
       _isScanning = true;
       _discoveredDevices.clear();
       _selectedDevice = null;
       _isPaired = false;
-      _connectionStatus = 'Scanning for devices...';
     });
 
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isScanning = false;
-      _connectionStatus = _discoveredDevices.isEmpty ? 'No devices found' : 'Select a device to pair';
-    });
+    try {
+      await _bleService.startScan(timeout: const Duration(seconds: 10));
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _connectionStatus = 'Scan failed: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+        });
+      }
+    }
   }
 
   Future<void> _connectToDevice(BluetoothDevice device) async {
@@ -171,38 +178,49 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
       _isConnecting = true;
       _selectedDevice = device;
       _isPaired = false;
-      _connectionStatus = 'Pairing with ${_getDeviceName(device)}...';
     });
 
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _isConnecting = false;
-      _isPaired = true;
-      _connectionStatus = 'Paired with ${_getDeviceName(device)}';
-    });
+    try {
+      final success = await _bleService.connectToDevice(device);
+      if (success && mounted) {
+        setState(() {
+          _isPaired = true;
+          _isConnecting = false;
+        });
 
-    _bleService.simulateConnection(_getDeviceName(device));
-    await _bleService.sendPaymentRequest(
-      senderName: 'Current User',
-      senderPhone: '+1234567890',
-      receiverName: widget.receiverName,
-      receiverPhone: widget.receiverPhone,
-      amount: widget.amount,
-      description: widget.description,
-    );
+        // Send payment request
+        await _bleService.sendPaymentRequest(
+          senderName: 'Current User',
+          senderPhone: '+1234567890',
+          receiverName: widget.receiverName,
+          receiverPhone: widget.receiverPhone,
+          amount: widget.amount,
+          description: widget.description,
+        );
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Payment of ₹${widget.amount.toStringAsFixed(2)} sent to ${_getDeviceName(device)}'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        setState(() {
+          _isWaitingResponse = true;
+        });
+      } else if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _selectedDevice = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _selectedDevice = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Connection failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-  }
-
-  String _getDeviceName(BluetoothDevice device) {
-    return _mockDeviceNames[device.remoteId.toString()] ?? 'Unknown Device';
   }
 
   Future<void> _verifyAndProceed() async {
@@ -221,16 +239,19 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
       _connectionStatus = 'Verifying payment...';
     });
 
-    await Future.delayed(const Duration(seconds: 1));
-    await _onPaymentAccepted({
-      'transaction_id': 'WEB_${DateTime.now().millisecondsSinceEpoch}',
-      'accepted': true,
-    });
-
+    // Simulate payment verification
+    await Future.delayed(const Duration(seconds: 2));
+    
     if (mounted) {
+      await _onPaymentAccepted({
+        'transaction_id': 'BT_${DateTime.now().millisecondsSinceEpoch}',
+        'accepted': true,
+      });
+
       setState(() {
         _isWaitingResponse = false;
       });
+
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => PaymentConfirmationPage(
@@ -294,7 +315,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'OffPay',
+                            'BinaNet Pay',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -378,7 +399,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
-                            'PAIRED',
+                            'CONNECTED',
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.w600,
@@ -424,7 +445,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
-                color: Colors.black, // Changed to pure black
+                color: Colors.black,
               ),
             ),
           ),
@@ -463,7 +484,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Paired with ${_getDeviceName(_selectedDevice!)}',
+                  'Connected to ${_bleService.getDeviceName(_selectedDevice!)}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -472,7 +493,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Payment sent. Verify to confirm.',
+                  _isWaitingResponse ? 'Waiting for response...' : 'Payment sent. Verify to confirm.',
                   style: TextStyle(
                     fontSize: 14,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -508,7 +529,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
           onPressed: _isScanning || _isConnecting ? null : _startScan,
         ),
         const SizedBox(height: 16),
-        if (_discoveredDevices.any((device) => _getDeviceName(device) == _defaultDeviceName))
+        if (_discoveredDevices.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -521,7 +542,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Demo device available for testing',
+                    'Found ${_discoveredDevices.length} device(s). Tap to connect.',
                     style: TextStyle(
                       color: colorScheme.primary,
                       fontSize: 14,
@@ -556,13 +577,16 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                         ),
                       ),
                       if (!_isScanning)
-                        Text(
-                          'Simulated devices available for web testing',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: colorScheme.onSurface.withOpacity(0.7),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Make sure nearby devices are discoverable',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                     ],
                   ),
@@ -572,7 +596,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                   itemBuilder: (context, index) {
                     final device = _discoveredDevices[index];
                     final isConnecting = _isConnecting && _selectedDevice?.remoteId == device.remoteId;
-                    final isDemoDevice = _getDeviceName(device) == _defaultDeviceName;
+                    final deviceName = _bleService.getDeviceName(device);
 
                     return Card(
                       elevation: 2,
@@ -588,17 +612,17 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isDemoDevice ? colorScheme.primary.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                            color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isDemoDevice ? Icons.smartphone : Icons.bluetooth,
-                            color: isDemoDevice ? colorScheme.primary : Colors.grey[600],
+                            Icons.bluetooth,
+                            color: Colors.blue[600],
                             size: 24,
                           ),
                         ),
                         title: Text(
-                          _getDeviceName(device),
+                          deviceName,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -607,12 +631,24 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
                                 : colorScheme.onSurface,
                           ),
                         ),
-                        subtitle: Text(
-                          isDemoDevice ? 'Demo Device - Tap to pair' : 'Tap to pair and send payment',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDemoDevice ? colorScheme.primary : Colors.grey[600],
-                          ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              device.remoteId.toString(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              'Tap to connect and send payment',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                         trailing: isConnecting
                             ? const SizedBox(
