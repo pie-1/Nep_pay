@@ -44,7 +44,7 @@ class BLEService {
       
       final adapterState = await FlutterBluePlus.adapterState.first;
       if (adapterState != BluetoothAdapterState.on) {
-        _connectionStatusController.add('Please enable Bluetooth');
+        _connectionStatusController.add('Please enable Bluetooth in device settings');
         return false;
       }
       
@@ -57,7 +57,7 @@ class BLEService {
   }
 
   // Start scanning for nearby devices
-  Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
+  Future<void> startScan({Duration timeout = const Duration(seconds: 15)}) async {
     try {
       // Check if Bluetooth is available first
       final isAvailable = await isBluetoothAvailable();
@@ -69,12 +69,13 @@ class BLEService {
       // Stop any existing scan
       await FlutterBluePlus.stopScan();
 
-      _connectionStatusController.add('Scanning for devices...');
+      _connectionStatusController.add('Scanning for Bluetooth devices...');
 
-      // Start scanning for all devices
+      // Start scanning for all devices with extended timeout
       await FlutterBluePlus.startScan(
         timeout: timeout,
         androidUsesFineLocation: true,
+        androidScanMode: AndroidScanMode.lowLatency,
       );
 
       // Listen for scan results
@@ -86,7 +87,9 @@ class BLEService {
           if (!_discoveredDevices.any((d) => d.remoteId == device.remoteId)) {
             _discoveredDevices.add(device);
             _devicesController.add(List.from(_discoveredDevices));
-            debugPrint('Found device: ${device.platformName} (${device.remoteId})');
+            
+            final deviceName = getDeviceName(device);
+            debugPrint('Found device: $deviceName (${device.remoteId})');
           }
         }
       });
@@ -96,9 +99,9 @@ class BLEService {
       await stopScan();
       
       if (_discoveredDevices.isEmpty) {
-        _connectionStatusController.add('No devices found. Make sure nearby devices are discoverable.');
+        _connectionStatusController.add('No devices found. Make sure nearby devices are discoverable and Bluetooth is enabled.');
       } else {
-        _connectionStatusController.add('Found ${_discoveredDevices.length} device(s). Select one to connect.');
+        _connectionStatusController.add('Found ${_discoveredDevices.length} device(s). Tap on a device to connect.');
       }
     } catch (e) {
       debugPrint('Error starting scan: $e');
@@ -120,15 +123,15 @@ class BLEService {
   // Connect to a specific device
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
-      final deviceName = device.platformName.isNotEmpty ? device.platformName : 'Unknown Device';
+      final deviceName = getDeviceName(device);
       _connectionStatusController.add('Connecting to $deviceName...');
       
       // Disconnect from any existing device
       await disconnect();
 
-      // Connect to the new device
+      // Connect to the new device with extended timeout
       await device.connect(
-        timeout: const Duration(seconds: 15),
+        timeout: const Duration(seconds: 20),
         autoConnect: false,
       );
       
@@ -136,6 +139,7 @@ class BLEService {
 
       // Listen for connection state changes
       _connectionStateSubscription = device.connectionState.listen((state) {
+        debugPrint('Connection state changed: $state');
         if (state == BluetoothConnectionState.disconnected) {
           _connectionStatusController.add('Disconnected from $deviceName');
           _connectedDevice = null;
@@ -144,36 +148,47 @@ class BLEService {
       });
 
       // Discover services
-      _connectionStatusController.add('Discovering services...');
+      _connectionStatusController.add('Discovering services on $deviceName...');
       final services = await device.discoverServices();
       
+      debugPrint('Found ${services.length} services on device');
+
       // Try to find our custom service first, otherwise use any available service
       BluetoothService? targetService;
       BluetoothCharacteristic? targetCharacteristic;
 
       // Look for our custom service
       for (var service in services) {
+        debugPrint('Service: ${service.uuid}');
         if (service.uuid.toString().toLowerCase() == serviceUuid.toLowerCase()) {
           targetService = service;
+          debugPrint('Found custom payment service');
           break;
         }
       }
 
-      // If custom service not found, use the first available service with characteristics
+      // If custom service not found, use the first available service with writable characteristics
       if (targetService == null) {
         for (var service in services) {
-          if (service.characteristics.isNotEmpty) {
-            targetService = service;
-            break;
+          for (var characteristic in service.characteristics) {
+            if (characteristic.properties.write || 
+                characteristic.properties.writeWithoutResponse) {
+              targetService = service;
+              debugPrint('Using service: ${service.uuid} for communication');
+              break;
+            }
           }
+          if (targetService != null) break;
         }
       }
 
       if (targetService != null) {
         // Look for our custom characteristic first
         for (var characteristic in targetService.characteristics) {
+          debugPrint('Characteristic: ${characteristic.uuid}, Properties: ${characteristic.properties}');
           if (characteristic.uuid.toString().toLowerCase() == characteristicUuid.toLowerCase()) {
             targetCharacteristic = characteristic;
+            debugPrint('Found custom payment characteristic');
             break;
           }
         }
@@ -186,6 +201,7 @@ class BLEService {
                 characteristic.properties.notify ||
                 characteristic.properties.read) {
               targetCharacteristic = characteristic;
+              debugPrint('Using characteristic: ${characteristic.uuid} for communication');
               break;
             }
           }
@@ -206,7 +222,7 @@ class BLEService {
           }
         }
 
-        _connectionStatusController.add('Connected to $deviceName');
+        _connectionStatusController.add('Successfully connected to $deviceName');
         return true;
       } else {
         _connectionStatusController.add('No suitable characteristics found on $deviceName');
@@ -215,7 +231,7 @@ class BLEService {
       }
     } catch (e) {
       debugPrint('Error connecting to device: $e');
-      _connectionStatusController.add('Failed to connect: $e');
+      _connectionStatusController.add('Failed to connect: ${e.toString()}');
       return false;
     }
   }
@@ -268,14 +284,16 @@ class BLEService {
       final jsonData = jsonEncode(paymentData);
       final bytes = utf8.encode(jsonData);
       
+      debugPrint('Sending payment request: $jsonData');
+      
       // Send data in chunks if needed
       await _sendDataInChunks(bytes);
       
-      _connectionStatusController.add('Payment request sent');
+      _connectionStatusController.add('Payment request sent successfully');
       
-      // Simulate automatic acceptance for demo purposes
-      // In real implementation, this would come from the receiving device
-      await Future.delayed(const Duration(seconds: 2));
+      // Simulate automatic acceptance for demo purposes since we're connecting to regular devices
+      // In a real BinaNet Pay implementation, both devices would have the app installed
+      await Future.delayed(const Duration(seconds: 3));
       _messageController.add({
         'type': 'payment_response',
         'transaction_id': paymentData['transaction_id'],
@@ -336,12 +354,14 @@ class BLEService {
         if (_connectedDevice != null) {
           mtu = await _connectedDevice!.mtu.first;
           mtu = mtu - 3; // Account for ATT overhead
+          debugPrint('Device MTU: $mtu');
         }
       } catch (e) {
         debugPrint('Could not get MTU, using default: $e');
       }
 
       final chunkSize = mtu.clamp(20, 512);
+      debugPrint('Sending ${data.length} bytes in chunks of $chunkSize');
       
       for (int i = 0; i < data.length; i += chunkSize) {
         final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
@@ -357,9 +377,11 @@ class BLEService {
         
         // Small delay between chunks
         if (i + chunkSize < data.length) {
-          await Future.delayed(const Duration(milliseconds: 10));
+          await Future.delayed(const Duration(milliseconds: 20));
         }
       }
+      
+      debugPrint('Data sent successfully');
     } catch (e) {
       debugPrint('Error sending data chunks: $e');
       rethrow;
@@ -398,27 +420,29 @@ class BLEService {
   
   String get connectedDeviceName {
     if (_connectedDevice == null) return 'Not Connected';
-    final name = _connectedDevice!.platformName;
-    return name.isNotEmpty ? name : 'Unknown Device';
+    return getDeviceName(_connectedDevice!);
   }
 
   // Get device name helper
   String getDeviceName(BluetoothDevice device) {
-    final name = device.platformName;
-    if (name.isNotEmpty) return name;
+    // Try platform name first
+    final platformName = device.platformName;
+    if (platformName.isNotEmpty) return platformName;
     
-    // Try to get name from advertisement data
+    // Try advertisement name
     final advName = device.advName;
     if (advName.isNotEmpty) return advName;
     
-    return 'Unknown Device';
+    // Use MAC address as fallback
+    final macAddress = device.remoteId.toString();
+    return 'Device ${macAddress.substring(macAddress.length - 8)}';
   }
 
   // Check if device supports our payment service (for filtering)
   Future<bool> supportsPaymentService(BluetoothDevice device) async {
     try {
       // For now, we'll assume all connectable devices can potentially support payments
-      // In a real implementation, you might check for specific service UUIDs
+      // In a real implementation, you might check for specific service UUIDs in advertisement data
       return true;
     } catch (e) {
       return false;

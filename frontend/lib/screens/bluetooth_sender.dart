@@ -55,6 +55,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
     _messageSubscription?.cancel();
     _statusSubscription?.cancel();
     _bleService.stopScan();
+    _bleService.disconnect();
     super.dispose();
   }
 
@@ -157,7 +158,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
     });
 
     try {
-      await _bleService.startScan(timeout: const Duration(seconds: 10));
+      await _bleService.startScan(timeout: const Duration(seconds: 15));
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -227,7 +228,7 @@ class _BluetoothSenderScreenState extends State<BluetoothSenderScreen> with Sing
     if (!_isPaired || _selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No device paired. Please pair a device first.'),
+          content: Text('No device connected. Please connect to a device first.'),
           backgroundColor: Colors.red,
         ),
       );
